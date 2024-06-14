@@ -52,20 +52,19 @@ public class ActivityCombo extends AppCompatActivity {
 
     private void ObtenerInfo() {
         SQLiteDatabase db = conexion.getReadableDatabase();
-        Personas person = null;
+        Personas persona = null;
         lista = new ArrayList<>();
 
-        //CURSOR PARA RECORRER LOS DATOS DE LA TABLA
         Cursor cursor = db.rawQuery(Trans.SelectAllPerson, null);
 
         while (cursor.moveToNext()) {
-            person = new Personas();
-            person.setId(cursor.getInt(0));
-            person.setNombres(cursor.getString(1));
-            person.setApellidos(cursor.getString(2));
-            person.setCorreo(cursor.getString(4)); // Asegúrate de tener el índice correcto para correo
+            persona = new Personas();
+            persona.setId(cursor.getInt(0));
+            persona.setNombres(cursor.getString(1));
+            persona.setApellidos(cursor.getString(2));
+            persona.setCorreo(cursor.getString(4));
 
-            lista.add(person);
+            lista.add(persona);
         }
 
         cursor.close();
@@ -77,7 +76,8 @@ public class ActivityCombo extends AppCompatActivity {
         for (int i = 0; i < lista.size(); i++) {
             Arreglo.add(lista.get(i).getId() + " " +
                     lista.get(i).getNombres() + " " +
-                    lista.get(i).getApellidos());
+                    lista.get(i).getApellidos() + " " +
+                    lista.get(i).getCorreo());
         }
 
         ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, Arreglo);
