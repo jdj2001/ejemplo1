@@ -1,11 +1,16 @@
 package com.example.ejemplo1;
 
 import android.Manifest;
+import android.content.ContentValues;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Bitmap;
+import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
+import android.util.Base64;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
@@ -21,16 +26,21 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+
+import Configuracion.SQLiteConexion;
+import Configuracion.Trans;
+
 public class ActivityPhoto extends AppCompatActivity {
+    static final int PETICION_ACCESO_CAMARA = 101;
+    static final int PETICION_CAPTURA_IMAGEN = 102;
 
-    //ELEMENTOS ESCENCIALES DEL API PARA TOMAR FOTOS, PARA HACER ACCIONES EN EL TELÉFONO Y LAS INTENCIONES/ITEMS (SALTAR A OTRA PÁGINA: TAREA 1)
-    //DOS TIPOS DE ACCESO: PETICION DE CAPTURA Y PETICION DE ACCESO A LA CÁMARA
-    static final int peticion_acceso_camara = 101;
-    static final int peticion_captura_imagen = 102;
+    ImageView objetoImagen;
+    Button btnCaptura;
+    Uri photoURI;
+    String image64;
 
-    ImageView ObjetoImagen;
-    Button btncaptura;
-    String PathImagen;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -42,63 +52,90 @@ public class ActivityPhoto extends AppCompatActivity {
             return insets;
         });
 
-        ObjetoImagen = (ImageView) findViewById(R.id.imageView);
-        btncaptura = (Button) findViewById(R.id.btntakefoto);
+        objetoImagen = findViewById(R.id.imageView);
+        btnCaptura = findViewById(R.id.btntakefoto);
 
-        btncaptura.setOnClickListener(new View.OnClickListener() {
+        btnCaptura.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Permisos();
+                permisos();
             }
         });
     }
 
-    private void Permisos()
-    {
-        //ESCOGER MANIFEST DE ANDROID
-        if(ContextCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED);
-        {
-            ActivityCompat.requestPermissions(this, new String[] {Manifest.permission.CAMERA}, peticion_acceso_camara);
+    private void permisos() {
+        if (ContextCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED ||
+                ContextCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.CAMERA, Manifest.permission.WRITE_EXTERNAL_STORAGE}, PETICION_ACCESO_CAMARA);
+        } else {
+            dispatchTakePictureIntent();
         }
-
     }
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-
-        if(requestCode == peticion_acceso_camara)
-        {
-            //arreglo de enteros
-            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED)
-            {
-                TomarFoto();
-            }
-            else
-            {
+        if (requestCode == PETICION_ACCESO_CAMARA) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                dispatchTakePictureIntent();
+            } else {
                 Toast.makeText(getApplicationContext(), "Acceso Denegado", Toast.LENGTH_LONG).show();
             }
         }
     }
 
-    private void TomarFoto()
-    {
-        Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-
-        if(intent.resolveActivity(getPackageManager()) != null)
-        {
-            startActivityForResult(intent, peticion_captura_imagen);
+    private void dispatchTakePictureIntent() {
+        Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+        if (takePictureIntent.resolveActivity(getPackageManager()) != null) {
+            ContentValues values = new ContentValues();
+            values.put(MediaStore.Images.Media.TITLE, "New Picture");
+            values.put(MediaStore.Images.Media.DESCRIPTION, "From your Camera");
+            photoURI = getContentResolver().insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
+            takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, photoURI);
+            startActivityForResult(takePictureIntent, PETICION_CAPTURA_IMAGEN);
         }
     }
 
+    @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-
-        if(requestCode == peticion_captura_imagen)
-        {
-            Bundle extras = data.getExtras();
-            Bitmap imagen = (Bitmap) extras.get("data");
-            ObjetoImagen.setImageBitmap(imagen);
+        if (requestCode == PETICION_CAPTURA_IMAGEN && resultCode == RESULT_OK) {
+            if (photoURI != null) {
+                objetoImagen.setImageURI(photoURI);
+                Bitmap bitmap = null;
+                try {
+                    bitmap = MediaStore.Images.Media.getBitmap(this.getContentResolver(), photoURI);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                if (bitmap != null) {
+                    image64 = convertImageToBase64(bitmap);
+                    Log.i("Imagen", image64);
+                    //saveImagePathToDatabase(photoURI.toString(), image64);
+                }
+            }
         }
     }
+
+    private String convertImageToBase64(Bitmap bitmap) {
+        ByteArrayOutputStream byteImage = new ByteArrayOutputStream();
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 50, byteImage);
+        byte[] byteArray = byteImage.toByteArray();
+        return Base64.encodeToString(byteArray, Base64.DEFAULT);
+    }
+
+    /*private void saveImagePathToDatabase(String path, String imageBase64) {
+        SQLiteConexion conexion = new SQLiteConexion(this, Trans.DBname, null, 1);
+        SQLiteDatabase db = conexion.getWritableDatabase();
+        ContentValues values = new ContentValues();
+        values.put(Trans.foto, path); // Guardar la URI de la imagen
+        values.put("image_base64", imageBase64); // Guardar la imagen en base64
+        long newRowId = db.insert(Trans.TablePersonas, null, values);
+        if (newRowId == -1) {
+            Toast.makeText(this, "Error al guardar la ruta de la foto en la base de datos", Toast.LENGTH_SHORT).show();
+        } else {
+            Toast.makeText(this, "Foto guardada en la base de datos", Toast.LENGTH_SHORT).show();
+        }
+        db.close();
+    }*/
 }

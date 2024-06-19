@@ -25,3 +25,4 @@ public class Trans
 
     public static final String DropTablePersonas = "DROP TABLE IF EXISTS " + TablePersonas;
 }
+

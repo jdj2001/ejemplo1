@@ -1,23 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    tools:context=".ActivityPhoto">
+    tools:context=".ActivityVideo">
 
-    <ImageView
-        android:id="@+id/imageView"
+    <VideoView
+        android:id="@+id/videoView"
         android:layout_width="match_parent"
         android:layout_height="406dp"
         tools:srcCompat="@tools:sample/avatars" />
 
     <Button
-        android:id="@+id/btntakefoto"
-        android:layout_width="match_parent"
+        android:id="@+id/btnStartRecording"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="@string/TomarFoto" />
-
-</LinearLayout>
+        android:text="Tomar Video"
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true"/>
+</RelativeLayout>
