@@ -27,6 +27,7 @@ public class ActivityVideo extends AppCompatActivity {
     static final int PETICION_ACCESO_CAMARA = 101;
     static final int PETICION_CAPTURA_VIDEO = 103;
     static final int CALIDAD_VIDEO = 1;
+
     static final int DURACION_VIDEO = 30; // Duración máxima en segundos del video
 
     VideoView videoView;
