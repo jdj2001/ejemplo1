@@ -4,7 +4,6 @@ import android.Manifest;
 import android.content.ContentValues;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
@@ -15,14 +14,10 @@ import android.widget.Button;
 import android.widget.Toast;
 import android.widget.VideoView;
 
-import androidx.activity.EdgeToEdge;
-import androidx.activity.result.ActivityResult;
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -40,7 +35,7 @@ public class ActivityVideo extends AppCompatActivity {
     String videoBase64;
 
     @Override
-    /*protected void onCreate(Bundle savedInstanceState) {
+    protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_video);
 
@@ -48,26 +43,6 @@ public class ActivityVideo extends AppCompatActivity {
         btnStartRecording = findViewById(R.id.btnStartRecording);
 
         btnStartRecording.setOnClickListener(v -> permisosVideo());
-    }*/
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        EdgeToEdge.enable(this);
-        setContentView(R.layout.activity_video);
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
-            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
-            return insets;
-        });
-
-        videoView = findViewById(R.id.videoView);
-        btnStartRecording = findViewById(R.id.btnStartRecording);
-
-        btnStartRecording.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                permisosVideo();
-            }
-        });
     }
 
     private void permisosVideo() {
@@ -81,7 +56,7 @@ public class ActivityVideo extends AppCompatActivity {
     }
 
     @Override
-    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (requestCode == PETICION_ACCESO_CAMARA) {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
@@ -111,12 +86,22 @@ public class ActivityVideo extends AppCompatActivity {
         super.onActivityResult(requestCode, resultCode, data);
 
         if (requestCode == PETICION_CAPTURA_VIDEO && resultCode == RESULT_OK) {
-            videoUri = data.getData();
+            // Verificar si data es null o si data.getData() es null
+            if (data != null && data.getData() != null) {
+                videoUri = data.getData();
+            }
+
             if (videoUri != null) {
                 videoView.setVideoURI(videoUri);
                 videoView.start();
                 videoBase64 = convertVideoToBase64(videoUri);
-                Log.i("Video Base64", videoBase64);
+                if (videoBase64 != null) {
+                    Log.i("Video Base64", videoBase64);
+                } else {
+                    Log.e("Video Base64", "Error en la conversión del video a base64");
+                }
+            } else {
+                Log.e("Video URI", "Error al obtener la URI del video");
             }
         }
     }
