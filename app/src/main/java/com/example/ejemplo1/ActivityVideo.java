@@ -45,6 +45,7 @@ public class ActivityVideo extends AppCompatActivity {
         btnStartRecording.setOnClickListener(v -> permisosVideo());
     }
 
+
     private void permisosVideo() {
         if (ContextCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED ||
                 ContextCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED ||
